@@ -13,7 +13,6 @@ apt-get update
 apt-get install -y tor socat curl
 
 echo "[*] Downloading Tor Automate Engine..."
-
 curl -fsSL "$REPO/tor-automate.sh" -o /usr/local/bin/tor-automate
 
 chmod +x /usr/local/bin/tor-automate
@@ -24,6 +23,5 @@ echo " Installation Complete!"
 echo "========================================"
 echo
 echo "Run the program using:"
-echo
 echo "tor-automate"
 echo
