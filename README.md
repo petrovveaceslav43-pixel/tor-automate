@@ -30,7 +30,11 @@ Automated Tor node management engine with multi-location routing, port mapping, 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/petrovveaceslav43-pixel/tor-automate/main/install.sh)
 ```
+## Run
 
+```bash
+tor-automate
+```
 ---
 
 ## Screenshots
