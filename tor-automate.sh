@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Tor Automate Engine V1.8
-# Outbound Port Mapping & Persistence (Tor Only)
+# Outbound Port Mapping & Persistence (Tor Only) - Flag UI & Safe Install
 
 set -e
 
@@ -19,25 +19,25 @@ BG_BLUE='\033[44m'
 BASE_DIR="/etc/tor/t_sin_nodes"
 DATA_DIR="/var/lib/tor/t_sin_nodes"
 
-# Format: "CountryCode : CountryName : TorPort"
+# Format: "CountryCode : CountryName : TorPort : FlagEmoji"
 declare -A NODES=(
-    [01]="DE:Germany:9080" [02]="TR:Turkey:9081" [03]="US:United States:9082"
-    [04]="FR:France:9083" [05]="AT:Austria:9084" [06]="BE:Belgium:9085"
-    [07]="RO:Romania:9086" [08]="CA:Canada:9087" [09]="SG:Singapore:9088"
-    [10]="JP:Japan:9089" [11]="IE:Ireland:9090" [12]="FI:Finland:9091"
-    [13]="ES:Spain:9092" [14]="PL:Poland:9093" [15]="NL:Netherlands:9094"
-    [16]="IT:Italy:9095" [17]="CH:Switzerland:9096" [18]="SE:Sweden:9097"
-    [19]="NO:Norway:9098" [20]="DK:Denmark:9099" [21]="IS:Iceland:9100"
-    [22]="AU:Australia:9101" [23]="IN:India:9102" [24]="HK:Hong Kong:9103"
-    [25]="UA:Ukraine:9104" [26]="CZ:Czech Republic:9105" [27]="KR:South Korea:9106"
-    [28]="ZA:South Africa:9107" [29]="MX:Mexico:9108" [30]="MY:Malaysia:9109"
-    [31]="AZ:Azerbaijan:9110" [32]="CY:Cyprus:9111" [33]="GR:Greece:9112"
-    [34]="PT:Portugal:9113" [35]="HU:Hungary:9114" [36]="LU:Luxembourg:9115"
-    [37]="GB:United Kingdom:9116" [38]="AR:Argentina:9117" [39]="TW:Taiwan:9118"
-    [40]="BG:Bulgaria:9119" [41]="IL:Israel:9120" [42]="MD:Moldova:9121"
-    [43]="RU:Russia:9122" [44]="CL:Chile:9123" [45]="CR:Costa Rica:9124"
-    [46]="VN:Vietnam:9125" [47]="ID:Indonesia:9126" [48]="SC:Seychelles:9127"
-    [49]="HR:Croatia:9128" [50]="TN:Tunisia:9129"
+    [01]="DE:Germany:9080:🇩🇪" [02]="TR:Turkey:9081:🇹🇷" [03]="US:United States:9082:🇺🇸"
+    [04]="FR:France:9083:🇫🇷" [05]="AT:Austria:9084:🇦🇹" [06]="BE:Belgium:9085:🇧🇪"
+    [07]="RO:Romania:9086:🇷🇴" [08]="CA:Canada:9087:🇨🇦" [09]="SG:Singapore:9088:🇸🇬"
+    [10]="JP:Japan:9089:🇯🇵" [11]="IE:Ireland:9090:🇮🇪" [12]="FI:Finland:9091:🇫🇮"
+    [13]="ES:Spain:9092:🇪🇸" [14]="PL:Poland:9093:🇵🇱" [15]="NL:Netherlands:9094:🇳🇱"
+    [16]="IT:Italy:9095:🇮🇹" [17]="CH:Switzerland:9096:🇨🇭" [18]="SE:Sweden:9097:🇸🇪"
+    [19]="NO:Norway:9098:🇳🇴" [20]="DK:Denmark:9099:🇩🇰" [21]="IS:Iceland:9100:🇮🇸"
+    [22]="AU:Australia:9101:🇦🇺" [23]="IN:India:9102:🇮🇳" [24]="HK:Hong Kong:9103:🇭🇰"
+    [25]="UA:Ukraine:9104:🇺🇦" [26]="CZ:Czech Republic:9105:🇨🇿" [27]="KR:South Korea:9106:🇰🇷"
+    [28]="ZA:South Africa:9107:🇿🇦" [29]="MX:Mexico:9108:🇲🇽" [30]="MY:Malaysia:9109:🇲🇾"
+    [31]="AZ:Azerbaijan:9110:🇦🇿" [32]="CY:Cyprus:9111:🇨🇾" [33]="GR:Greece:9112:🇬🇷"
+    [34]="PT:Portugal:9113:🇵🇹" [35]="HU:Hungary:9114:🇭🇺" [36]="LU:Luxembourg:9115:🇱🇺"
+    [37]="GB:United Kingdom:9116:🇬🇧" [38]="AR:Argentina:9117:🇦🇷" [39]="TW:Taiwan:9118:🇹🇼"
+    [40]="BG:Bulgaria:9119:🇧🇬" [41]="IL:Israel:9120:🇮🇱" [42]="MD:Moldova:9121:🇲🇩"
+    [43]="RU:Russia:9122:🇷🇺" [44]="CL:Chile:9123:🇨🇱" [45]="CR:Costa Rica:9124:🇨🇷"
+    [46]="VN:Vietnam:9125:🇻🇳" [47]="ID:Indonesia:9126:🇮🇩" [48]="SC:Seychelles:9127:🇸🇨"
+    [49]="HR:Croatia:9128:🇭🇷" [50]="TN:Tunisia:9129:🇹🇳"
 )
 
 ORDER=({01..50})
@@ -86,7 +86,6 @@ deploy_node() {
     local inst_data_dir="$DATA_DIR/${code}_${out_port}"
     local ip_file="$inst_data_dir/last_ip.txt"
 
-    # ساخت پوشه‌های مورد نیاز (حل ارور فایل و مسیر)
     mkdir -p "$BASE_DIR"
     mkdir -p "$inst_data_dir"
     chown -R debian-tor:debian-tor "$inst_data_dir" 2>/dev/null || true
@@ -101,14 +100,12 @@ Log notice file $inst_data_dir/notices.log
 EOF
     chown debian-tor:debian-tor "$conf_file"
 
-    # از بین بردن پراسس‌های قبلی همین نود
     if pgrep -f "node_${code}_${out_port}.conf" > /dev/null; then
         pkill -f "node_${code}_${out_port}.conf" 2>/dev/null || true
     fi
 
     echo -e "${CYAN}[*] Routing ${WHITE}$name ${CYAN}➔ Tor Port: ${MAGENTA}$out_port${CYAN}. Please wait...${NC}"
     
-    # اجرای Tor
     sudo -u debian-tor tor -f "$conf_file" >/dev/null 2>&1 &
     
     draw_progress "Bootstrapping Tor connection"
@@ -130,13 +127,32 @@ EOF
 }
 
 list_locations() {
-    echo -e "${YELLOW}Available Locations:${NC}"
-    echo -e "${MAGENTA}Format: ${CYAN}[Code] [Tor Port] - Country${NC}\n"
-    for idx in "${ORDER[@]}"; do
-        local details="${NODES[$idx]}"
-        IFS=':' read -r code name out_port <<< "$details"
-        printf "  ${CYAN}%s${NC} - [${WHITE}%s${NC}] [Tor: ${MAGENTA}%s${NC}] - %s\n" "$idx" "$code" "$out_port" "$name"
+    echo -e "${YELLOW}Available Locations:${NC}\n"
+    
+    # چاپ دو ستونه تمیز
+    for ((i=1; i<=50; i+=2)); do
+        local idx1=$(printf "%02d" $i)
+        local idx2=$(printf "%02d" $((i+1)))
+        
+        # ستون چپ
+        IFS=':' read -r code1 name1 port1 flag1 <<< "${NODES[$idx1]}"
+        local stat1="⚪"
+        if [ -f "$BASE_DIR/node_${code1}_${port1}.conf" ]; then stat1="🟢"; fi
+        
+        # ستون راست
+        local right_col=""
+        if [[ -n "${NODES[$idx2]}" ]]; then
+            IFS=':' read -r code2 name2 port2 flag2 <<< "${NODES[$idx2]}"
+            local stat2="⚪"
+            if [ -f "$BASE_DIR/node_${code2}_${port2}.conf" ]; then stat2="🟢"; fi
+            # فاصله‌گذاری دقیق 18 کاراکتری برای نام کشور
+            right_col=$(printf "${CYAN}[%s]${NC} %s %-18s %s" "$idx2" "$flag2" "$name2" "$stat2")
+        fi
+        
+        # ترکیب دو ستون و نمایش
+        printf "  ${CYAN}[%s]${NC} %s %-18s %s    %s\n" "$idx1" "$flag1" "$name1" "$stat1" "$right_col"
     done
+    
     echo -e "\n  ${RED}00${NC} - ${WHITE}Back to main menu${NC}\n"
 }
 
@@ -145,7 +161,6 @@ view_active_nodes() {
     echo -e "${CYAN}» Option 6 - View Active Nodes (Status & IP Tracking)${NC}\n"
     echo -e "${YELLOW}[*] Probing RAM and Storage for deployed systems...${NC}"
     
-    # رسم هدر جدول
     echo -e "${BLUE}┌──────┬──────────────────────┬─────────────┬──────────────┬────────────────────────────┐${NC}"
     echo -e "${BLUE}│${WHITE} ID   ${BLUE}│${WHITE} Location             ${BLUE}│${WHITE} Tor Port    ${BLUE}│${WHITE} Status       ${BLUE}│${WHITE} Live IP                    ${BLUE}│${NC}"
     echo -e "${BLUE}├──────┼──────────────────────┼─────────────┼──────────────┼────────────────────────────┤${NC}"
@@ -153,27 +168,22 @@ view_active_nodes() {
     local found=0
     for idx in "${ORDER[@]}"; do
         local details="${NODES[$idx]}"
-        IFS=':' read -r code name out_port <<< "$details"
+        IFS=':' read -r code name out_port flag <<< "$details"
         
         local conf_file="$BASE_DIR/node_${code}_${out_port}.conf"
         local ip_file="$DATA_DIR/${code}_${out_port}/last_ip.txt"
         
         if [ -f "$conf_file" ]; then
             found=1
-            # چاپ قسمت اول اطلاعات (ID, Location, Port)
             printf "${BLUE}│${CYAN} %-4s ${BLUE}│${WHITE} %-20s ${BLUE}│${MAGENTA} %-11s ${BLUE}│" "$idx" "$name" "$out_port"
             
-            # بررسی وضعیت روشن بودن سرویس Tor برای این نود
             if pgrep -f "node_${code}_${out_port}.conf" > /dev/null; then
-                # تلاش برای گرفتن آی‌پی از نود
                 local ip=$(curl -s --socks5-hostname 127.0.0.1:$out_port https://api.ipify.org --max-time 3 || true)
                 
                 if [ ! -z "$ip" ] && [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-                    # اگر آی‌پی درست بود -> ONLINE
                     echo "$ip" > "$ip_file"
                     printf " ${GREEN}%-12s ${BLUE}│ ${GREEN}%-26s ${BLUE}│${NC}\n" "ONLINE" "$ip"
                 else
-                    # اگر آی‌پی نگرفت اما پردازش در حال اجرا بود -> CONNECTING
                     local display_ip="Wait..."
                     if [ -f "$ip_file" ]; then
                         display_ip="$(cat "$ip_file") (Cache)"
@@ -181,7 +191,6 @@ view_active_nodes() {
                     printf " ${YELLOW}%-12s ${BLUE}│ ${YELLOW}%-26s ${BLUE}│${NC}\n" "CONNECTING" "$display_ip"
                 fi
             else
-                # اگر پردازش Tor کلا خوابیده بود -> OFFLINE
                 local display_ip="-"
                 if [ -f "$ip_file" ]; then
                     display_ip="$(cat "$ip_file")"
@@ -191,7 +200,6 @@ view_active_nodes() {
         fi
     done
     
-    # اگر هیچ نودی نصب نبود
     if [ $found -eq 0 ]; then
         echo -e "${BLUE}│${YELLOW} No active nodes found in the system.                                                   ${BLUE}│${NC}"
     fi
@@ -207,9 +215,9 @@ edit_delete_nodes() {
     local installed=()
     for idx in "${ORDER[@]}"; do
         local details="${NODES[$idx]}"
-        IFS=':' read -r code name out_port <<< "$details"
+        IFS=':' read -r code name out_port flag <<< "$details"
         if [ -f "$BASE_DIR/node_${code}_${out_port}.conf" ]; then
-            printf "  ${CYAN}%s${NC} - ${WHITE}%s${NC} [Tor: ${MAGENTA}%s${NC}]\n" "$idx" "$name" "$out_port"
+            printf "  ${CYAN}%s${NC} - ${WHITE}%s %s${NC} [Tor: ${MAGENTA}%s${NC}]\n" "$idx" "$flag" "$name" "$out_port"
             installed+=("$idx")
         fi
     done
@@ -226,7 +234,6 @@ edit_delete_nodes() {
     read -p "$(echo -e ${CYAN}"Select node index to manage (delete): "${NC})" raw_del_idx
     if [ -z "$raw_del_idx" ] || [ "$raw_del_idx" == "00" ] || [ "$raw_del_idx" == "0" ]; then return; fi
     
-    # حذف تمامی نودها در صورت انتخاب 99
     if [ "$raw_del_idx" == "99" ]; then
         echo -e "${YELLOW}[*] Deleting ALL nodes...${NC}"
         pkill -f "t_sin_nodes/node_" 2>/dev/null || true
@@ -242,9 +249,8 @@ edit_delete_nodes() {
 
     if [[ " ${installed[*]} " =~ " ${del_idx} " ]]; then
         local details="${NODES[$del_idx]}"
-        IFS=':' read -r code name out_port <<< "$details"
+        IFS=':' read -r code name out_port flag <<< "$details"
         
-        # Kill Tor Node
         pkill -f "node_${code}_${out_port}.conf" 2>/dev/null || true
         
         rm -f "$BASE_DIR/node_${code}_${out_port}.conf"
@@ -268,10 +274,16 @@ bulk_add_nodes() {
     read -p "$(echo -e ${CYAN}"Select deployment mode [0-2]: "${NC})" bulk_opt
     
     if [ "$bulk_opt" == "1" ]; then
-        echo -e "${YELLOW}[!] Initiating deployment for ALL available nodes...${NC}"
+        echo -e "${YELLOW}[!] Initiating deployment for ALL uninstalled nodes...${NC}"
         for idx in "${ORDER[@]}"; do
-            IFS=':' read -r code name out_port <<< "${NODES[$idx]}"
-            echo -e "\n${CYAN}[*] Processing ${WHITE}$name${CYAN}...${NC}"
+            IFS=':' read -r code name out_port flag <<< "${NODES[$idx]}"
+            
+            # جلوگیری از نصب نودی که قبلا نصب شده
+            if [ -f "$BASE_DIR/node_${code}_${out_port}.conf" ]; then
+                continue
+            fi
+            
+            echo -e "\n${CYAN}[*] Processing ${WHITE}$flag $name${CYAN}...${NC}"
             deploy_node "$code" "$name" "$out_port"
             sleep 1 
         done
@@ -291,10 +303,16 @@ bulk_add_nodes() {
             if [ -n "$clean_i" ]; then
                 local p_idx=$(printf "%02d" "$clean_i")
                 if [[ -n "${NODES[$p_idx]}" ]]; then
-                    IFS=':' read -r code name out_port <<< "${NODES[$p_idx]}"
-                    echo -e "\n${CYAN}[*] Processing ${WHITE}$name${CYAN}...${NC}"
-                    deploy_node "$code" "$name" "$out_port"
-                    sleep 1
+                    IFS=':' read -r code name out_port flag <<< "${NODES[$p_idx]}"
+                    
+                    # جلوگیری از نصب نودی که قبلا نصب شده
+                    if [ -f "$BASE_DIR/node_${code}_${out_port}.conf" ]; then
+                        echo -e "${YELLOW}[!] $flag $name is already active (🟢). Skipping...${NC}"
+                    else
+                        echo -e "\n${CYAN}[*] Processing ${WHITE}$flag $name${CYAN}...${NC}"
+                        deploy_node "$code" "$name" "$out_port"
+                        sleep 1
+                    fi
                 fi
             fi
         done
@@ -348,9 +366,16 @@ while true; do
             if [[ "$loc_idx" == "00" ]]; then continue; fi
             p_idx=$(printf "%02d" "$loc_idx")
             if [[ -n "${NODES[$p_idx]}" ]]; then
-                IFS=':' read -r code name out_port <<< "${NODES[$p_idx]}"
-                deploy_node "$code" "$name" "$out_port"
-                read -p "$(echo -e ${WHITE}"Press Enter to return..."${NC})"
+                IFS=':' read -r code name out_port flag <<< "${NODES[$p_idx]}"
+                
+                # بلوک کردن نصب نود در صورتی که سبز (نصب شده) باشد
+                if [ -f "$BASE_DIR/node_${code}_${out_port}.conf" ]; then
+                    echo -e "\n${YELLOW}[!] Node $flag $name is already active (🟢). You cannot install it again.${NC}"
+                    sleep 2
+                else
+                    deploy_node "$code" "$name" "$out_port"
+                    read -p "$(echo -e ${WHITE}"Press Enter to return..."${NC})"
+                fi
             fi
             ;;
         5) check_root; bulk_add_nodes ;;
