@@ -37,12 +37,17 @@ tor-automate
 ```
 ---
 
-## Screenshots
+## Donate
+If you find this tool helpful and would like to support its development, contributions are greatly appreciated:
 
+## USDT (BEP20):
+0xB637Be81e7ED32738A850bA6774466FC430E8eAA
+
+## Tron (TRC20):
+0xB637Be81e7ED32738A850bA6774466FC430E8eAA
+
+## Screenshots
 Coming soon...
 
----
-
-## License
-
+License
 MIT
