@@ -86,7 +86,7 @@ deploy_node() {
     local inst_data_dir="$DATA_DIR/${code}_${out_port}"
     local ip_file="$inst_data_dir/last_ip.txt"
 
-    # ساخت پوشه‌های مورد نیاز (حل مشکل ارور No such file or directory)
+    # ساخت پوشه‌های مورد نیاز (حل ارور فایل و مسیر)
     mkdir -p "$BASE_DIR"
     mkdir -p "$inst_data_dir"
     chown -R debian-tor:debian-tor "$inst_data_dir" 2>/dev/null || true
@@ -142,11 +142,13 @@ list_locations() {
 
 view_active_nodes() {
     draw_header
-    echo -e "${CYAN}» Option 6 - View Active Nodes (Persistent Tracking)${NC}\n"
+    echo -e "${CYAN}» Option 6 - View Active Nodes (Status & IP Tracking)${NC}\n"
     echo -e "${YELLOW}[*] Probing RAM and Storage for deployed systems...${NC}"
-    echo -e "${BLUE}┌──────┬──────────────────────┬─────────────┬────────────────────────────┐${NC}"
-    echo -e "${BLUE}│${WHITE} ID   ${BLUE}│${WHITE} Location             ${BLUE}│${WHITE} Tor Port  ${BLUE}│${WHITE} Live IP / Last IP          ${BLUE}│${NC}"
-    echo -e "${BLUE}├──────┼──────────────────────┼─────────────┼────────────────────────────┤${NC}"
+    
+    # رسم هدر جدول
+    echo -e "${BLUE}┌──────┬──────────────────────┬─────────────┬──────────────┬────────────────────────────┐${NC}"
+    echo -e "${BLUE}│${WHITE} ID   ${BLUE}│${WHITE} Location             ${BLUE}│${WHITE} Tor Port    ${BLUE}│${WHITE} Status       ${BLUE}│${WHITE} Live IP                    ${BLUE}│${NC}"
+    echo -e "${BLUE}├──────┼──────────────────────┼─────────────┼──────────────┼────────────────────────────┤${NC}"
     
     local found=0
     for idx in "${ORDER[@]}"; do
@@ -158,37 +160,42 @@ view_active_nodes() {
         
         if [ -f "$conf_file" ]; then
             found=1
-            printf "${BLUE}│${CYAN} %-4s ${BLUE}│${WHITE} %-20s ${BLUE}│${MAGENTA} %-11s ${BLUE}│ " "$idx" "$name" "$out_port"
+            # چاپ قسمت اول اطلاعات (ID, Location, Port)
+            printf "${BLUE}│${CYAN} %-4s ${BLUE}│${WHITE} %-20s ${BLUE}│${MAGENTA} %-11s ${BLUE}│" "$idx" "$name" "$out_port"
             
+            # بررسی وضعیت روشن بودن سرویس Tor برای این نود
             if pgrep -f "node_${code}_${out_port}.conf" > /dev/null; then
+                # تلاش برای گرفتن آی‌پی از نود
                 local ip=$(curl -s --socks5-hostname 127.0.0.1:$out_port https://api.ipify.org --max-time 3 || true)
                 
                 if [ ! -z "$ip" ] && [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                    # اگر آی‌پی درست بود -> ONLINE
                     echo "$ip" > "$ip_file"
-                    printf "${GREEN}%-26s${BLUE}│${NC}\n" "$ip"
+                    printf " ${GREEN}%-12s ${BLUE}│ ${GREEN}%-26s ${BLUE}│${NC}\n" "ONLINE" "$ip"
                 else
+                    # اگر آی‌پی نگرفت اما پردازش در حال اجرا بود -> CONNECTING
+                    local display_ip="Wait..."
                     if [ -f "$ip_file" ]; then
-                        local cached_ip=$(cat "$ip_file")
-                        printf "${YELLOW}%-26s${BLUE}│${NC}\n" "$cached_ip (Cached)"
-                    else
-                        printf "${YELLOW}%-26s${BLUE}│${NC}\n" "Connecting..."
+                        display_ip="$(cat "$ip_file") (Cache)"
                     fi
+                    printf " ${YELLOW}%-12s ${BLUE}│ ${YELLOW}%-26s ${BLUE}│${NC}\n" "CONNECTING" "$display_ip"
                 fi
             else
+                # اگر پردازش Tor کلا خوابیده بود -> OFFLINE
+                local display_ip="-"
                 if [ -f "$ip_file" ]; then
-                    local stopped_ip=$(cat "$ip_file")
-                    printf "${RED}%-26s${BLUE}│${NC}\n" "$stopped_ip (Stopped)"
-                else
-                    printf "${RED}%-26s${BLUE}│${NC}\n" "Offline/Crashed"
+                    display_ip="$(cat "$ip_file")"
                 fi
+                printf " ${RED}%-12s ${BLUE}│ ${RED}%-26s ${BLUE}│${NC}\n" "OFFLINE" "$display_ip"
             fi
         fi
     done
     
+    # اگر هیچ نودی نصب نبود
     if [ $found -eq 0 ]; then
-        echo -e "${BLUE}│${YELLOW} No active nodes found in the system.                                   ${BLUE}│${NC}"
+        echo -e "${BLUE}│${YELLOW} No active nodes found in the system.                                                   ${BLUE}│${NC}"
     fi
-    echo -e "${BLUE}└──────┴──────────────────────┴─────────────┴────────────────────────────┘${NC}\n"
+    echo -e "${BLUE}└──────┴──────────────────────┴─────────────┴──────────────┴────────────────────────────┘${NC}\n"
     read -p "$(echo -e ${WHITE}"Press Enter to return to main menu..."${NC})"
 }
 
@@ -324,16 +331,13 @@ while true; do
 
     case $main_choice in
         1) check_root; echo -e "${CYAN}[*] Install Logic Goes Here...${NC}"; sleep 1 ;;
-        2|8|9) echo -e "${YELLOW}[!] This feature is currently locked for this tier.${NC}"; sleep 2 ;;
+        2|8) echo -e "${YELLOW}[!] This feature is currently locked for this tier.${NC}"; sleep 2 ;;
         3) 
             check_root
             echo -e "${YELLOW}[*] Uninstalling Tor Automate Engine completely...${NC}"
-            # بستن پروسه‌های تور فعالِ این اسکریپت
             pkill -f "t_sin_nodes/node_" 2>/dev/null || true
-            # پاک کردن پوشه‌های دیتا و کانفیگ
             rm -rf /etc/tor/t_sin_nodes
             rm -rf /var/lib/tor/t_sin_nodes
-            # حذف اسکریپت اصلی
             rm -f /usr/local/bin/tor-automate
             echo -e "${GREEN}[+] Uninstallation complete. The program has been removed.${NC}"
             exit 0
@@ -352,6 +356,7 @@ while true; do
         5) check_root; bulk_add_nodes ;;
         6) view_active_nodes ;;
         7) check_root; edit_delete_nodes ;;
+        9) echo -e "${YELLOW}[!] This feature is currently locked for this tier.${NC}"; sleep 2 ;;
         0) clear; exit 0 ;;
         *) ;;
     esac
