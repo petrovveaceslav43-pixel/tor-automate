@@ -2,7 +2,7 @@
 
 set -e
 
-REPO="https://raw.githubusercontent.com/petrovveaceslav43-pixel/tor-automate/main/tor-automate"
+REPO="https://raw.githubusercontent.com/petrovveaceslav43-pixel/tor-automate/main"
 
 echo "========================================"
 echo "     Tor Automate Engine Installer"
