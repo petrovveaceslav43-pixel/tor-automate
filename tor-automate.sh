@@ -47,7 +47,7 @@ ORDER=({01..50})
 draw_header() {
     clear
     echo -e "${MAGENTA} ╔════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${MAGENTA} ║${CYAN}  ████████╗ ██████╗ ██████╗                             ${MAGENTA}║${NC}"
+    echo -e "${MAGENTA} ║${CYAN}  ████████╗ ██████╗ ██████╗                            ${MAGENTA}║${NC}"
     echo -e "${MAGENTA} ║${CYAN}  ╚══██╔══╝██╔═══██╗██╔══██╗                            ${MAGENTA}║${NC}"
     echo -e "${MAGENTA} ║${CYAN}     ██║   ██║   ██║██████╔╝                            ${MAGENTA}║${NC}"
     echo -e "${MAGENTA} ║${CYAN}     ██║   ██║   ██║██╔══██╗                            ${MAGENTA}║${NC}"
@@ -129,82 +129,100 @@ EOF
 list_locations() {
     echo -e "${YELLOW}Available Locations:${NC}\n"
     
-    # چاپ دو ستونه تمیز
-    for ((i=1; i<=50; i+=2)); do
+    # چاپ ستونی: 1 تا 25 در چپ | 26 تا 50 در راست
+    for ((i=1; i<=25; i++)); do
         local idx1=$(printf "%02d" $i)
-        local idx2=$(printf "%02d" $((i+1)))
+        local idx2=$(printf "%02d" $((i+25)))
         
         # ستون چپ
         IFS=':' read -r code1 name1 port1 flag1 <<< "${NODES[$idx1]}"
-        local stat1="⚪"
-        if [ -f "$BASE_DIR/node_${code1}_${port1}.conf" ]; then stat1="🟢"; fi
+        # دایره توخالی برای وضعیت عادی
+        local stat1="\e[1;37m○\e[0m"
+        # دایره توپر سبز رنگ برای نصب شده
+        if [ -f "$BASE_DIR/node_${code1}_${port1}.conf" ]; then stat1="\e[1;32m●\e[0m"; fi
         
         # ستون راست
         local right_col=""
         if [[ -n "${NODES[$idx2]}" ]]; then
             IFS=':' read -r code2 name2 port2 flag2 <<< "${NODES[$idx2]}"
-            local stat2="⚪"
-            if [ -f "$BASE_DIR/node_${code2}_${port2}.conf" ]; then stat2="🟢"; fi
-            # فاصله‌گذاری دقیق 18 کاراکتری برای نام کشور
-            right_col=$(printf "${CYAN}[%s]${NC} %s %-18s %s" "$idx2" "$flag2" "$name2" "$stat2")
+            local stat2="\e[1;37m○\e[0m"
+            if [ -f "$BASE_DIR/node_${code2}_${port2}.conf" ]; then stat2="\e[1;32m●\e[0m"; fi
+            
+            right_col=$(printf "${CYAN}[%s]${NC} %s %-18s %b" "$idx2" "$flag2" "$name2" "$stat2")
         fi
         
         # ترکیب دو ستون و نمایش
-        printf "  ${CYAN}[%s]${NC} %s %-18s %s    %s\n" "$idx1" "$flag1" "$name1" "$stat1" "$right_col"
+        printf "  ${CYAN}[%s]${NC} %s %-18s %b    %b\n" "$idx1" "$flag1" "$name1" "$stat1" "$right_col"
     done
     
     echo -e "\n  ${RED}00${NC} - ${WHITE}Back to main menu${NC}\n"
 }
 
 view_active_nodes() {
-    draw_header
-    echo -e "${CYAN}» Option 6 - View Active Nodes (Status & IP Tracking)${NC}\n"
-    echo -e "${YELLOW}[*] Probing RAM and Storage for deployed systems...${NC}"
-    
-    echo -e "${BLUE}┌──────┬──────────────────────┬─────────────┬──────────────┬────────────────────────────┐${NC}"
-    echo -e "${BLUE}│${WHITE} ID   ${BLUE}│${WHITE} Location             ${BLUE}│${WHITE} Tor Port    ${BLUE}│${WHITE} Status       ${BLUE}│${WHITE} Live IP                    ${BLUE}│${NC}"
-    echo -e "${BLUE}├──────┼──────────────────────┼─────────────┼──────────────┼────────────────────────────┤${NC}"
-    
-    local found=0
-    for idx in "${ORDER[@]}"; do
-        local details="${NODES[$idx]}"
-        IFS=':' read -r code name out_port flag <<< "$details"
+    while true; do
+        draw_header
+        echo -e "${CYAN}» Option 6 - Active Nodes Monitor (Auto-Heal & 5m Refresh)${NC}"
+        echo -e "${YELLOW}[*] Probing nodes... Offline nodes will be auto-restarted.${NC}\n"
         
-        local conf_file="$BASE_DIR/node_${code}_${out_port}.conf"
-        local ip_file="$DATA_DIR/${code}_${out_port}/last_ip.txt"
+        echo -e "${BLUE}┌──────┬──────────────────────┬─────────────┬──────────────┬────────────────────────────┐${NC}"
+        echo -e "${BLUE}│${WHITE} ID   ${BLUE}│${WHITE} Location             ${BLUE}│${WHITE} Tor Port    ${BLUE}│${WHITE} Status       ${BLUE}│${WHITE} Live IP                    ${BLUE}│${NC}"
+        echo -e "${BLUE}├──────┼──────────────────────┼─────────────┼──────────────┼────────────────────────────┤${NC}"
         
-        if [ -f "$conf_file" ]; then
-            found=1
-            printf "${BLUE}│${CYAN} %-4s ${BLUE}│${WHITE} %-20s ${BLUE}│${MAGENTA} %-11s ${BLUE}│" "$idx" "$name" "$out_port"
+        local found=0
+        for idx in "${ORDER[@]}"; do
+            local details="${NODES[$idx]}"
+            IFS=':' read -r code name out_port flag <<< "$details"
             
-            if pgrep -f "node_${code}_${out_port}.conf" > /dev/null; then
-                local ip=$(curl -s --socks5-hostname 127.0.0.1:$out_port https://api.ipify.org --max-time 3 || true)
+            local conf_file="$BASE_DIR/node_${code}_${out_port}.conf"
+            local ip_file="$DATA_DIR/${code}_${out_port}/last_ip.txt"
+            
+            if [ -f "$conf_file" ]; then
+                found=1
+                printf "${BLUE}│${CYAN} %-4s ${BLUE}│${WHITE} %-20s ${BLUE}│${MAGENTA} %-11s ${BLUE}│" "$idx" "$name" "$out_port"
                 
+                local ip=""
+                # بررسی آنلاین بودن و گرفتن آی‌پی
+                if pgrep -f "node_${code}_${out_port}.conf" > /dev/null; then
+                    ip=$(curl -s --socks5-hostname 127.0.0.1:$out_port https://api.ipify.org --max-time 5 || true)
+                fi
+                
+                # --- AUTO-HEAL LOGIC ---
+                # اگر آی‌پی دریافت نشد، یعنی آفلاین شده است و باید مجددا وصل شود
+                if [ -z "$ip" ] || ! [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                    # بستن پروسه قدیمی
+                    pkill -f "node_${code}_${out_port}.conf" 2>/dev/null || true
+                    # اجرای مجدد پروسه تور
+                    sudo -u debian-tor tor -f "$conf_file" >/dev/null 2>&1 &
+                    
+                    # دادن زمان کوتاه برای گرفتن آی‌پی جدید
+                    sleep 4
+                    ip=$(curl -s --socks5-hostname 127.0.0.1:$out_port https://api.ipify.org --max-time 5 || true)
+                fi
+                
+                # نمایش وضعیت نهایی
                 if [ ! -z "$ip" ] && [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
                     echo "$ip" > "$ip_file"
                     printf " ${GREEN}%-12s ${BLUE}│ ${GREEN}%-26s ${BLUE}│${NC}\n" "ONLINE" "$ip"
                 else
-                    local display_ip="Wait..."
-                    if [ -f "$ip_file" ]; then
-                        display_ip="$(cat "$ip_file") (Cache)"
-                    fi
-                    printf " ${YELLOW}%-12s ${BLUE}│ ${YELLOW}%-26s ${BLUE}│${NC}\n" "CONNECTING" "$display_ip"
+                    # اگر همچنان وصل نشد، در دور بعدی ۵ دقیقه مجدداً تلاش می‌کند
+                    printf " ${YELLOW}%-12s ${BLUE}│ ${YELLOW}%-26s ${BLUE}│${NC}\n" "HEALING..." "Wait next cycle"
                 fi
-            else
-                local display_ip="-"
-                if [ -f "$ip_file" ]; then
-                    display_ip="$(cat "$ip_file")"
-                fi
-                printf " ${RED}%-12s ${BLUE}│ ${RED}%-26s ${BLUE}│${NC}\n" "OFFLINE" "$display_ip"
             fi
+        done
+        
+        if [ $found -eq 0 ]; then
+            echo -e "${BLUE}│${YELLOW} No active nodes found in the system.                                               ${BLUE}│${NC}"
+        fi
+        echo -e "${BLUE}└──────┴──────────────────────┴─────────────┴──────────────┴────────────────────────────┘${NC}\n"
+        
+        echo -e "${MAGENTA}[ Monitoring mode active ]${NC} Screen will refresh every 5 minutes."
+        echo -e "${WHITE}Press any key (or Enter) to stop monitoring and return to main menu...${NC}"
+        
+        # منتظر ماندن به مدت 300 ثانیه (5 دقیقه). اگر کاربر کلیدی بزند، حلقه می‌شکند و به منو برمی‌گردد
+        if read -t 300 -n 1 -s key; then
+            break
         fi
     done
-    
-    if [ $found -eq 0 ]; then
-        echo -e "${BLUE}│${YELLOW} No active nodes found in the system.                                                   ${BLUE}│${NC}"
-    fi
-    echo -e "${BLUE}└──────┴──────────────────────┴─────────────┴──────────────┴────────────────────────────┘${NC}\n"
-    read -p "$(echo -e ${WHITE}"Press Enter to return to main menu..."${NC})"
 }
 
 edit_delete_nodes() {
@@ -307,7 +325,7 @@ bulk_add_nodes() {
                     
                     # جلوگیری از نصب نودی که قبلا نصب شده
                     if [ -f "$BASE_DIR/node_${code}_${out_port}.conf" ]; then
-                        echo -e "${YELLOW}[!] $flag $name is already active (🟢). Skipping...${NC}"
+                        echo -e "${YELLOW}[!] $flag $name is already active. Skipping...${NC}"
                     else
                         echo -e "\n${CYAN}[*] Processing ${WHITE}$flag $name${CYAN}...${NC}"
                         deploy_node "$code" "$name" "$out_port"
@@ -368,9 +386,9 @@ while true; do
             if [[ -n "${NODES[$p_idx]}" ]]; then
                 IFS=':' read -r code name out_port flag <<< "${NODES[$p_idx]}"
                 
-                # بلوک کردن نصب نود در صورتی که سبز (نصب شده) باشد
+                # بلوک کردن نصب نود در صورتی که نصب شده باشد
                 if [ -f "$BASE_DIR/node_${code}_${out_port}.conf" ]; then
-                    echo -e "\n${YELLOW}[!] Node $flag $name is already active (🟢). You cannot install it again.${NC}"
+                    echo -e "\n${YELLOW}[!] Node $flag $name is already active. You cannot install it again.${NC}"
                     sleep 2
                 else
                     deploy_node "$code" "$name" "$out_port"
