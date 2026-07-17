@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -euxo pipefail
 
 REPO="https://raw.githubusercontent.com/petrovveaceslav43-pixel/tor-automate/main"
 
