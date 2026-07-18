@@ -48,7 +48,7 @@ If you find this tool helpful and would like to support its development, contrib
 TX1eFkxRNrjJabHpCJLQJuaWoXHmAgitcX
 
 ## Support
-https://t.me/V2ray_support2
+[https://t.me/V2ray_support2](https://t.me/tor_automate)
 
 ## Screenshots
 Coming Soon
