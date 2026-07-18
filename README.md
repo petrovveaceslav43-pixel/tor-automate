@@ -46,6 +46,9 @@ If you find this tool helpful and would like to support its development, contrib
 ## Tron (TRC20):
 TX1eFkxRNrjJabHpCJLQJuaWoXHmAgitcX
 
+## Support
+https://t.me/V2ray_support2
+
 ## Screenshots
 Coming soon...
 
