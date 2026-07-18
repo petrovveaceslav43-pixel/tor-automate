@@ -51,6 +51,7 @@ TX1eFkxRNrjJabHpCJLQJuaWoXHmAgitcX
 (https://t.me/tor_automate)
 
 ## Screenshots
-Coming Soon
+<img width="838" height="521" alt="image" src="https://github.com/user-attachments/assets/0f4361e9-47c0-45ed-9f53-548caa28305d" />
+
 License
 MIT
