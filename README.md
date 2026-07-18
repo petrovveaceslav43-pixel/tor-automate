@@ -50,7 +50,7 @@ TX1eFkxRNrjJabHpCJLQJuaWoXHmAgitcX
 https://t.me/V2ray_support2
 
 ## Screenshots
-Coming soon...
+<img width="1254" height="1254" alt="d1b29bbe-b6b8-4b61-86bb-21be1ce1e6fe" src="https://github.com/user-attachments/assets/b6682e94-8b32-4e24-9e5b-bfa4495826e8" />
 
 License
 MIT
